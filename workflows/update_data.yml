@@ -2,7 +2,7 @@ name: Update PM2.5 Data
 
 on:
   schedule:
-    - cron: "15 18 * * *"   # 00:00 Nepal Time (UTC+5:45)
+    - cron: "40 3 * * *"   # 00:00 Nepal Time (UTC+5:45)
   workflow_dispatch:
 
 jobs:
