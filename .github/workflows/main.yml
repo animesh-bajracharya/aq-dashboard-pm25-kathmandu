@@ -5,6 +5,9 @@ on:
     - cron: "33 04 * * *"   # 00:00 Nepal Time (UTC+5:45)
   workflow_dispatch:
 
+permissions:
+  contents: write   # 🔑 REQUIRED to allow git push
+
 jobs:
   update:
     runs-on: ubuntu-latest
