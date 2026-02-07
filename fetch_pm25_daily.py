@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import time
 from collections import deque
 import os
@@ -18,6 +18,7 @@ MAX_REQUESTS_PER_MINUTE = 50
 
 DATA_FILE = "data/pm25_last_14_days.parquet"
 
+# ---------------- RATE LIMIT ----------------
 REQUEST_COUNT = 0
 REQUEST_TIMESTAMPS = deque()
 
@@ -29,7 +30,9 @@ def throttled_get(url, params=None):
         REQUEST_TIMESTAMPS.popleft()
 
     if len(REQUEST_TIMESTAMPS) >= MAX_REQUESTS_PER_MINUTE:
-        time.sleep(60 - (now - REQUEST_TIMESTAMPS[0]))
+        sleep_time = 60 - (now - REQUEST_TIMESTAMPS[0])
+        if sleep_time > 0:
+            time.sleep(sleep_time)
 
     REQUEST_COUNT += 1
     REQUEST_TIMESTAMPS.append(time.time())
@@ -38,16 +41,17 @@ def throttled_get(url, params=None):
     r.raise_for_status()
     return r
 
-# --------- Date range: last 24 hours ----------
-end_date = datetime.utcnow()
+# ---------------- DATE RANGE (UTC AWARE) ----------------
+end_date = datetime.now(timezone.utc)
 start_date = end_date - timedelta(days=1)
 
 date_from = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 date_to = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-# --------- Locations ----------
+# ---------------- FETCH LOCATIONS ----------------
 locations = []
 page = 1
+
 while True:
     params = {
         "coordinates": f"{LATITUDE},{LONGITUDE}",
@@ -55,28 +59,34 @@ while True:
         "limit": LIMIT,
         "page": page
     }
+
     r = throttled_get(f"{BASE_URL}/locations", params)
     results = r.json().get("results", [])
+
     if not results:
         break
+
     locations.extend(results)
+
     if len(results) < LIMIT:
         break
+
     page += 1
 
-# --------- PM2.5 sensors ----------
+# ---------------- FILTER PM2.5 SENSORS ----------------
 sensors = []
+
 for loc in locations:
     for s in loc.get("sensors", []):
         if s.get("parameter", {}).get("name") == "pm25":
             sensors.append({
                 "sensor_id": s["id"],
                 "location": loc["name"],
-                "lat": loc["coordinates"]["latitude"],
-                "lon": loc["coordinates"]["longitude"]
+                "latitude": loc["coordinates"]["latitude"],
+                "longitude": loc["coordinates"]["longitude"]
             })
 
-# --------- Fetch data ----------
+# ---------------- FETCH MEASUREMENTS ----------------
 records = []
 
 for s in sensors:
@@ -88,10 +98,12 @@ for s in sensors:
             "limit": LIMIT,
             "page": page
         }
+
         r = throttled_get(
             f"{BASE_URL}/sensors/{s['sensor_id']}/measurements",
             params
         )
+
         results = r.json().get("results", [])
         if not results:
             break
@@ -102,30 +114,40 @@ for s in sensors:
                 "value": row["value"],
                 "sensor_id": s["sensor_id"],
                 "location": s["location"],
-                "latitude": s["lat"],
-                "longitude": s["lon"]
+                "latitude": s["latitude"],
+                "longitude": s["longitude"]
             })
 
         if len(results) < LIMIT:
             break
+
         page += 1
 
+# ---------------- DATAFRAME ----------------
 new_df = pd.DataFrame(records)
-new_df["timestamp_utc"] = pd.to_datetime(new_df["timestamp_utc"], utc=True)
 
 os.makedirs("data", exist_ok=True)
 
 if os.path.exists(DATA_FILE):
     old_df = pd.read_parquet(DATA_FILE)
-    df = pd.concat([old_df, new_df])
+    df = pd.concat([old_df, new_df], ignore_index=True)
 else:
-    df = new_df
+    df = new_df.copy()
 
-cutoff = datetime.utcnow() - timedelta(days=14)
+# 🔑 FORCE datetime conversion AFTER concat
+df["timestamp_utc"] = pd.to_datetime(
+    df["timestamp_utc"],
+    utc=True,
+    errors="coerce"
+)
+
+# Drop bad timestamps if any
+df = df.dropna(subset=["timestamp_utc"])
+
+# ---------------- KEEP LAST 14 DAYS ----------------
+cutoff = pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=14)
 df = df[df["timestamp_utc"] >= cutoff]
 
-df.to_parquet(DATA_FILE, index=False)
 
-print(f"Added {len(new_df)} rows")
-print(f"Total stored: {len(df)}")
-print(f"Requests used: {REQUEST_COUNT}")
+# ---------------- SAVE ----------------
+df.to_parquet(DATA_FILE, index=False)
