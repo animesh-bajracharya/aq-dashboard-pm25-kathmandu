@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 from pathlib import Path
+from datetime import datetime
 
 # ================= STREAMLIT CONFIG =================
 
@@ -10,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("PM2.5 Diurnal Pattern (Box & Whisker)")
+st.title("PM2.5 Diurnal Pattern - Kathmandu")
 st.caption(
     "Hourly PM2.5 distribution across all stations (rolling last 14 days, Nepal Time)"
 )
@@ -40,38 +43,93 @@ df["timestamp_npt"] = df["timestamp_utc"] + pd.Timedelta(hours=5, minutes=45)
 
 df["hour"] = df["timestamp_npt"].dt.hour
 
-# ================= BOXPLOT DATA =================
+# # ================= BOXPLOT DATA =================
 
-hourly_data = [
-    df[df["hour"] == h]["value"].dropna()
-    for h in range(24)
-]
+# hourly_data = [
+#     df[df["hour"] == h]["value"].dropna()
+#     for h in range(24)
+# ]
 
-# ================= PLOT =================
-
-fig, ax = plt.subplots(figsize=(14, 6))
-
-ax.boxplot(
-    hourly_data,
-    positions=range(24),
-    widths=0.6,
-    showfliers=False
+# ================ Plot with streamlit object ================
+hourly_stats = (
+    df
+    .groupby("hour")["value"]
+    .agg(
+        median="median",
+        q25=lambda x: x.quantile(0.25),
+        q75=lambda x: x.quantile(0.75)
+    )
+    .reset_index()
 )
 
-ax.set_xlabel("Hour of Day (Nepal Time)")
-ax.set_ylabel("PM2.5 (µg/m³)")
-ax.set_title("Hourly PM2.5 Distribution (All Stations, All Days)")
+fig = go.Figure()
 
-ax.set_xticks(range(24))
-ax.set_xticklabels(range(24))
-ax.grid(axis="y", linestyle="--", alpha=0.4)
+# IQR band
+fig.add_trace(go.Scatter(
+    x=hourly_stats["hour"],
+    y=hourly_stats["q75"],
+    line=dict(width=0),
+    showlegend=False,
+    hoverinfo="skip"
+))
 
-# ---- OPTIONAL: overlay hourly mean ----
-hourly_mean = df.groupby("hour")["value"].mean()
-ax.plot(range(24), hourly_mean, color="red", marker="o", label="Hourly Mean")
-ax.legend()
+fig.add_trace(go.Scatter(
+    x=hourly_stats["hour"],
+    y=hourly_stats["q25"],
+    fill="tonexty",
+    fillcolor="rgba(255,0,0,0.15)",
+    line=dict(width=0),
+    name="Typical Range (IQR)"
+))
 
-st.pyplot(fig)
+# Median line
+fig.add_trace(go.Scatter(
+    x=hourly_stats["hour"],
+    y=hourly_stats["median"],
+    mode="lines+markers",
+    line=dict(width=3),
+    name="Median PM2.5"
+))
+
+# WHO 24-hour guideline (15 µg/m³ – updated WHO)
+fig.add_hline(
+    y=15,
+    line_dash="dot",
+    line_color="green",
+    annotation_text="WHO Guideline (15)",
+    annotation_position="top left"
+)
+
+# Unhealthy threshold (commonly used ~35 µg/m³)
+fig.add_hline(
+    y=35,
+    line_dash="dash",
+    line_color="red",
+    annotation_text="Avoid Outdoor Activity (35)",
+    annotation_position="top left"
+)
+# ================= add current time
+current_hour = datetime.now().hour
+
+fig.add_vline(
+    x=current_hour,
+    line_dash="dash",
+    line_color="black",
+    annotation_text=f"Now ({current_hour}:00)",
+    annotation_position="top"
+)
+# ==================== Final layout of the graph
+fig.update_layout(
+    title="When Should You Avoid Outdoor Activity? (Hourly PM2.5 Pattern)",
+    xaxis_title="Hour of Day (Nepal Time)",
+    yaxis_title="PM2.5 (µg/m³)",
+    xaxis=dict(dtick=1),
+    yaxis=dict(range=[0, 200]),
+    template="plotly_white",
+    legend=dict(orientation="h", y=-0.2)
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
 # ================= SUMMARY TABLE =================
 
