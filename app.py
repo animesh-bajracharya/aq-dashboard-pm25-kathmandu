@@ -121,7 +121,7 @@ fig.add_vline(
 )
 # ==================== Final layout of the graph
 fig.update_layout(
-    title="Q: When Should You Avoid Outdoor Activity? (Hourly PM2.5 Pattern) Ans: Aim a time close to WHO recommendation time",
+    title="Q: When Should You Avoid Outdoor Activity? (Hourly PM2.5 Pattern) Ans: Aim for a time close to WHO recommendated levels",
     xaxis_title="Hour of Day (Nepal Time)",
     yaxis_title="PM2.5 (µg/m³)",
     xaxis=dict(dtick=1),
