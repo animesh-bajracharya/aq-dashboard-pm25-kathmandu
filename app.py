@@ -109,7 +109,8 @@ fig.add_hline(
     annotation_position="top left"
 )
 # ================= add current time
-current_hour = datetime.now().hour
+current_time_IST = datetime.now() + pd.Timedelta(hours=5, minutes=45)
+current_hour = current_time_IST.hour
 
 fig.add_vline(
     x=current_hour,
