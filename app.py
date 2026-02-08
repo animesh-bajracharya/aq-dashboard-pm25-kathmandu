@@ -9,7 +9,7 @@ from datetime import datetime
 # ================= STREAMLIT CONFIG =================
 
 st.set_page_config(
-    page_title="PM2.5 Diurnal Pattern – Kathmandu",
+    page_title="PM2.5 Diurnal Pattern – Kathmandu (v1.0)",
     layout="wide"
 )
 
