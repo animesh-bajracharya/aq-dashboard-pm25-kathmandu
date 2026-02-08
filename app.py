@@ -9,11 +9,11 @@ from datetime import datetime
 # ================= STREAMLIT CONFIG =================
 
 st.set_page_config(
-    page_title="PM2.5 Diurnal Pattern – Kathmandu (v1.0)",
+    page_title="PM2.5 Diurnal Pattern – Kathmandu",
     layout="wide"
 )
 
-st.title("PM2.5 Diurnal Pattern - Kathmandu")
+st.title("PM2.5 Diurnal Pattern - Kathmandu (v1.0)")
 st.caption(
     "Hourly PM2.5 distribution across all stations (rolling last 14 days, Nepal Time)"
 )
