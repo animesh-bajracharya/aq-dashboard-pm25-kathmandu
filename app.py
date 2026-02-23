@@ -34,7 +34,7 @@ def get_aqi_color(pm25):
     if pm25 <= 15: return "green", "Good (WHO Compliant)"
     if pm25 <= 35: return "orange", "Moderate (Sensitive Groups Alert)"
     if pm25 <= 55: return "red", "Unhealthy"
-    return "purple", "Very Unhealthy"
+    return "violet", "Very Unhealthy"
 
 def get_recommendation(pm25):
     if pm25 <= 15:
