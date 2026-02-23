@@ -218,6 +218,23 @@ fig_heat.update_layout(
 
 st.plotly_chart(fig_heat, use_container_width=True)
 
+# ======== WEEKLY====
+st.markdown("### 📆 Weekly Patterns")
+df_filtered["weekday"] = df_filtered["timestamp_npt"].dt.day_name()
+# Sort order: Monday to Sunday
+days_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+weekday_stats = df_filtered.groupby("weekday")["value"].mean().reindex(days_order).reset_index()
+
+fig_week = px.bar(
+    weekday_stats, x="weekday", y="value",
+    color="value",
+    color_continuous_scale="RdYlGn_r",
+    title="Average Pollution by Day of Week"
+)
+fig_week.update_layout(xaxis_title="", yaxis_title="Avg PM2.5")
+st.plotly_chart(fig_week, use_container_width=True)
+
 # ================= FOOTER =================
 st.markdown("---")
 st.caption(
