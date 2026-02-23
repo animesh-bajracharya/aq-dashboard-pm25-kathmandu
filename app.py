@@ -75,7 +75,7 @@ df["date_str"] = df["timestamp_npt"].dt.strftime('%Y-%m-%d')
 col_header, col_select = st.columns([3, 1])
 
 with col_header:
-    st.title("😷 Kathmandu Air Quality")
+    st.title("😷 Kathmandu Air Quality (v 2.0)")
     st.caption("Daily pollution cycles & actionable insights")
 
 with col_select:
