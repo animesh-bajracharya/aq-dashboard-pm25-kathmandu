@@ -22,7 +22,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("😷 Kathmandu Air Quality Tracker")
+st.title("😷 Kathmandu Air Quality Tracker V 2.0")
 st.markdown("### Daily Cycles & Actionable Insights")
 
 DATA_FILE = Path("data/pm25_last_14_days.parquet")
