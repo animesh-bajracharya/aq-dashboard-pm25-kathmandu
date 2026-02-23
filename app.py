@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("PM2.5 Diurnal Pattern - Kathmandu")
+st.title("PM2.5 Diurnal Pattern - Kathmandu (V 1.5)")
 st.caption("Hourly PM2.5 distribution across all stations (Nepal Time)")
 
 DATA_FILE = Path("data/pm25_last_14_days.parquet")
