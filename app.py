@@ -13,7 +13,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS to make metrics look better and adjust padding
+# Custom CSS
 st.markdown("""
 <style>
     [data-testid="stMetricValue"] {
@@ -180,7 +180,7 @@ fig.update_layout(
     title="<b>Diurnal Profile:</b> When does pollution spike?",
     xaxis_title="Hour of Day (NPT)",
     yaxis_title="PM2.5 (µg/m³)",
-    # FIXED: Show every 3rd hour to prevent overlap (0, 3, 6, 9...)
+    # dtick=3 to prevent overlap, tickangle=0 for horizontal labels
     xaxis=dict(dtick=3, tickangle=0, fixedrange=True),
     yaxis=dict(range=[0, max(200, hourly_stats['q75'].max() + 20)]),
     legend=dict(orientation="h", y=1.1),
@@ -208,13 +208,12 @@ fig_heat = px.imshow(
 )
 
 fig_heat.update_layout(
-    # FIXED: Show every 3rd hour to prevent overlap
+    # dtick=3 to prevent overlap, tickangle=0 for horizontal labels
     xaxis=dict(dtick=3, tickangle=0),
     margin=dict(l=20, r=20, t=20, b=20),
+    # Legend reverted to default side position
     coloraxis_colorbar=dict(
-        orientation="h",
-        y=-0.4, # Push legend further down
-        title="PM2.5 Level (µg/m³)",
+        title="PM2.5",
         thickness=15
     )
 )
