@@ -175,6 +175,12 @@ fig.add_vline(
     annotation_text="NOW", annotation_position="top right"
 )
 
+# Add background color bands (AQI Zones)
+fig.add_hrect(y0=0, y1=15, fillcolor="green", opacity=0.05, layer="below", line_width=0)
+fig.add_hrect(y0=15, y1=35, fillcolor="orange", opacity=0.05, layer="below", line_width=0)
+fig.add_hrect(y0=35, y1=55, fillcolor="red", opacity=0.05, layer="below", line_width=0)
+fig.add_hrect(y0=55, y1=200, fillcolor="purple", opacity=0.05, layer="below", line_width=0)
+
 fig.update_layout(
     title="<b>Diurnal Profile:</b> When does pollution spike?",
     xaxis_title="Hour of Day (NPT)",
