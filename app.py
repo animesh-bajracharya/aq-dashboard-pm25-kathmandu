@@ -13,13 +13,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS to make metrics look better
+# Custom CSS to make metrics look better and adjust padding
 st.markdown("""
 <style>
     [data-testid="stMetricValue"] {
         font-size: 24px;
     }
-    /* Adjust top padding to align title and selectbox */
     .block-container {
         padding-top: 2rem;
     }
@@ -35,7 +34,7 @@ def get_aqi_color(pm25):
     if pm25 <= 15: return "green", "Good (WHO Compliant)"
     if pm25 <= 35: return "orange", "Moderate (Sensitive Groups)"
     if pm25 <= 55: return "red", "Unhealthy"
-    return "violet", "Very Unhealthy" # Fixed: 'violet' is supported, 'purple' is not
+    return "violet", "Very Unhealthy"
 
 def get_recommendation(pm25):
     if pm25 <= 15:
@@ -63,9 +62,7 @@ if df.empty:
 
 # ================= TIME HANDLING =================
 
-# Ensure UTC
 df["timestamp_utc"] = pd.to_datetime(df["timestamp_utc"], utc=True)
-# Convert to Nepal Time (UTC +5:45)
 df["timestamp_npt"] = df["timestamp_utc"] + pd.Timedelta(hours=5, minutes=45)
 df["hour"] = df["timestamp_npt"].dt.hour
 df["date_str"] = df["timestamp_npt"].dt.strftime('%Y-%m-%d')
@@ -75,7 +72,7 @@ df["date_str"] = df["timestamp_npt"].dt.strftime('%Y-%m-%d')
 col_header, col_select = st.columns([3, 1])
 
 with col_header:
-    st.title("😷 Kathmandu Air Quality (v 2.0)")
+    st.title("😷 Kathmandu Air Quality")
     st.caption("Daily pollution cycles & actionable insights")
 
 with col_select:
@@ -85,7 +82,7 @@ with col_select:
         index=0
     )
 
-# Filter Data based on Main Page Selection
+# Filter Data
 max_date = df["timestamp_npt"].max()
 cutoff_days = 7 if days_option == "Last 7 Days" else 14
 cutoff_date = max_date - pd.Timedelta(days=cutoff_days)
@@ -93,18 +90,15 @@ df_filtered = df[df["timestamp_npt"] > cutoff_date].copy()
 
 # ================= KEY METRICS (KPIs) =================
 
-# Calculate statistics based on FILTERED data
 current_time_npt = datetime.now(timezone.utc) + timedelta(hours=5, minutes=45)
 current_hour = current_time_npt.hour
 
 hourly_means = df_filtered.groupby("hour")["value"].median()
 
-# Handle edge case where specific hour might be missing in filtered data
 current_hour_typical = hourly_means.get(current_hour, 0)
 peak_hour = hourly_means.idxmax() if not hourly_means.empty else 0
 cleanest_hour = hourly_means.idxmin() if not hourly_means.empty else 0
 
-# Status Color
 status_color, status_text = get_aqi_color(current_hour_typical)
 
 col1, col2, col3, col4 = st.columns(4)
@@ -137,9 +131,7 @@ with col4:
     st.markdown(f"**Current Status:**")
     st.markdown(f":{status_color}[**{status_text}**]")
 
-# Recommendation Banner
-rec_msg = get_recommendation(current_hour_typical)
-st.info(rec_msg)
+st.info(get_recommendation(current_hour_typical))
 
 # ================= MAIN DIURNAL PLOT =================
 
@@ -171,7 +163,7 @@ fig.add_trace(go.Scatter(
 fig.add_trace(go.Scatter(
     x=hourly_stats["hour"], y=hourly_stats["median"],
     mode="lines+markers",
-    line=dict(width=3, color="#FF4B4B"), # Streamlit Red
+    line=dict(width=3, color="#FF4B4B"),
     name="Median PM2.5"
 ))
 
@@ -179,7 +171,6 @@ fig.add_trace(go.Scatter(
 fig.add_hline(y=15, line_dash="dot", line_color="green", annotation_text="WHO (15)")
 fig.add_hline(y=35, line_dash="dash", line_color="orange", annotation_text="Sensitive (35)")
 
-# Current Time Marker
 fig.add_vline(
     x=current_hour, line_dash="solid", line_color="black", opacity=0.3,
     annotation_text="NOW", annotation_position="top right"
@@ -189,8 +180,8 @@ fig.update_layout(
     title="<b>Diurnal Profile:</b> When does pollution spike?",
     xaxis_title="Hour of Day (NPT)",
     yaxis_title="PM2.5 (µg/m³)",
-    # Force ticks to be horizontal (0 degrees)
-    xaxis=dict(dtick=1, tickangle=0, fixedrange=True),
+    # FIXED: Show every 3rd hour to prevent overlap (0, 3, 6, 9...)
+    xaxis=dict(dtick=3, tickangle=0, fixedrange=True),
     yaxis=dict(range=[0, max(200, hourly_stats['q75'].max() + 20)]),
     legend=dict(orientation="h", y=1.1),
     hovermode="x unified",
@@ -203,7 +194,6 @@ st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("### 📅 Pollution Intensity Heatmap")
 
-# Pivot data for heatmap: Index=Date, Columns=Hour, Values=Mean PM2.5
 heatmap_data = df_filtered.groupby(["date_str", "hour"])["value"].mean().reset_index()
 heatmap_pivot = heatmap_data.pivot(index="date_str", columns="hour", values="value")
 
@@ -213,18 +203,17 @@ fig_heat = px.imshow(
     x=heatmap_pivot.columns,
     y=heatmap_pivot.index,
     aspect="auto",
-    color_continuous_scale="RdYlGn_r", # Red-Yellow-Green reversed
+    color_continuous_scale="RdYlGn_r",
     origin='lower'
 )
 
 fig_heat.update_layout(
-    # Force ticks to be horizontal
-    xaxis=dict(dtick=1, tickangle=0),
+    # FIXED: Show every 3rd hour to prevent overlap
+    xaxis=dict(dtick=3, tickangle=0),
     margin=dict(l=20, r=20, t=20, b=20),
-    # Move color scale (legend) to the bottom
     coloraxis_colorbar=dict(
         orientation="h",
-        y=-0.3,  # Negative Y moves it below the chart
+        y=-0.4, # Push legend further down
         title="PM2.5 Level (µg/m³)",
         thickness=15
     )
