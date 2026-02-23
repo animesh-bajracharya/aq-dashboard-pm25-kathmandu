@@ -71,7 +71,7 @@ df["date_str"] = df["timestamp_npt"].dt.strftime('%Y-%m-%d')
 col_header, col_select = st.columns([3, 1], vertical_alignment="bottom")
 
 with col_header:
-    st.title("😷 Kathmandu Air Quality")
+    st.title("😷 Kathmandu Air Quality (v2.0)")
     st.caption("Daily pollution cycles & actionable insights")
 
 with col_select:
@@ -180,7 +180,7 @@ fig.update_layout(
     xaxis_title="Hour of Day (NPT)",
     yaxis_title="PM2.5 (µg/m³)",
     # dtick=3 to prevent overlap, tickangle=0 for horizontal labels
-    xaxis=dict(dtick=3, tickangle=0, fixedrange=True),
+    xaxis=dict(dtick=2, tickangle=0, fixedrange=True),
     yaxis=dict(range=[0, max(200, hourly_stats['q75'].max() + 20)]),
     legend=dict(orientation="h", y=1.1),
     hovermode="x unified",
