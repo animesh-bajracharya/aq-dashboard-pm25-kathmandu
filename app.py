@@ -14,13 +14,11 @@ st.set_page_config(
 )
 
 # Custom CSS
+# REMOVED the .block-container padding to fix the cutting-off issue
 st.markdown("""
 <style>
     [data-testid="stMetricValue"] {
         font-size: 24px;
-    }
-    .block-container {
-        padding-top: 2rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -69,7 +67,8 @@ df["date_str"] = df["timestamp_npt"].dt.strftime('%Y-%m-%d')
 
 # ================= LAYOUT & CONTROLS =================
 
-col_header, col_select = st.columns([3, 1])
+# Added vertical_alignment="bottom" to align the title text with the input box nicely
+col_header, col_select = st.columns([3, 1], vertical_alignment="bottom")
 
 with col_header:
     st.title("😷 Kathmandu Air Quality")
@@ -211,7 +210,6 @@ fig_heat.update_layout(
     # dtick=3 to prevent overlap, tickangle=0 for horizontal labels
     xaxis=dict(dtick=3, tickangle=0),
     margin=dict(l=20, r=20, t=20, b=20),
-    # Legend reverted to default side position
     coloraxis_colorbar=dict(
         title="PM2.5",
         thickness=15
