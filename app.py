@@ -77,13 +77,21 @@ with col_header:
 with col_select:
     days_option = st.selectbox(
         "Analysis Period:",
-        options=["Last 7 Days", "Last 14 Days"],
-        index=0
+        options=["Last 3 Days", "Last 7 Days", "Last 14 Days"],
+        index=1  # Set to 1 so "Last 7 Days" is the default
     )
 
 # Filter Data
 max_date = df["timestamp_npt"].max()
-cutoff_days = 7 if days_option == "Last 7 Days" else 14
+
+# Logic to handle the new 3-day mapping
+if days_option == "Last 3 Days":
+    cutoff_days = 3
+elif days_option == "Last 7 Days":
+    cutoff_days = 7
+else:
+    cutoff_days = 14
+
 cutoff_date = max_date - pd.Timedelta(days=cutoff_days)
 df_filtered = df[df["timestamp_npt"] > cutoff_date].copy()
 
